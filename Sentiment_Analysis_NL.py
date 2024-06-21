@@ -15,12 +15,12 @@ print("Current working directory:", os.getcwd())
 
 # Step 1: Load CSV files
 csv_files = [
-    'MI 10T - 128GB_reviews.csv',
-    'Micromax Dual 4  64 GB_reviews.csv',
-    'Motorola Edge 50 Pro 5G - 256GB_reviews.csv',
-    'Vivo V23e 5G - 128GB_reviews.csv',
-    'Oneplus 10R - 128GB_reviews.csv',
-    'Samsung Galaxy S23 FE- 128GB_reviews.csv'
+    'OPPO Reno11 5G_reviews.csv',
+    'POCO F4 5G_reviews.csv',
+    'realme 12+ 5G_reviews.csv',
+    'REDMI Note 13 Pro+ 5G_reviews.csv',
+    'vivo V25 Pro 5G_reviews.csv',
+    'SAMSUNG Galaxy A34 5G_reviews.csv'
 ]
 
 def get_product_name(df):
@@ -124,12 +124,19 @@ def compare_products(query):
 
 # Step 5: Streamlit App
 def main():
-    st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/e/ed/Pandas_logo.svg/1200px-Pandas_logo.svg.png",
-             use_column_width=True)
+    # Page setup
+    st.set_page_config(page_title='Product Sentiment Analysis', layout='wide')
+
+    # Page title and image
     st.title('Product Sentiment Analysis')
+    st.image("upd_image_1.jpg",
+             use_column_width=True, caption='Customer Reviews Analysis')
+
 
     # User input
-    user_query = st.text_input('Enter your query:')
+    st.sidebar.header("Enter your query:")
+    user_query = st.sidebar.text_input('')
+
     if user_query:
         # Perform sentiment analysis on the user query
         query_sentiment = get_sentiment(user_query)
@@ -138,13 +145,17 @@ def main():
         # Compare products based on user query
         sentiment_analysis = compare_products(user_query)
 
-        max_score = max(sentiment_rec["average_polarity"] for sentiment_rec in sentiment_analysis.values())
-
         if sentiment_analysis:
             # Display sentiment analysis results
-            st.write("Sentiment Analysis Results:")
+            st.markdown('---')
+            st.subheader('Sentiment Analysis Results')
+
+            # Display best product analysis
+            st.markdown('<h3 style="font-family:sans-serif; font-size:20px;">Best Product Analysis</h3>',
+                        unsafe_allow_html=True)
+
             best_product_data = None
-            if query_polarity > 0:  # Positive sentiment query
+            if query_polarity >= 0:  # Positive sentiment query
                 max_positive_score = -float('inf')
                 for product, sentiment in sentiment_analysis.items():
                     score = sentiment["average_polarity"]
@@ -157,7 +168,7 @@ def main():
                     # Convert subjectivity to a more understandable format
                     subjectivity_label = interpret_subjectivity(subjectivity)
 
-                    if score >= max_positive_score:
+                    if score > max_positive_score:
                         max_positive_score = score
                         best_product_data = {
                             "Product": product,
@@ -196,10 +207,17 @@ def main():
                         }
 
             if best_product_data:
-                sentiment_summary = pd.DataFrame([best_product_data])
-                st.write(sentiment_summary)
+                # sentiment_summary = pd.DataFrame([best_product_data])
+                # st.write(sentiment_summary)
+                st.write(pd.DataFrame([best_product_data]).set_index('Product'))
 
-            # Visualization (optional): Bar chart of average polarities
+            products = list(sentiment_analysis.keys())
+            scores = [sentiment['average_polarity'] for sentiment in sentiment_analysis.values()]
+            subjectivities = [sentiment['average_subjectivity'] for sentiment in sentiment_analysis.values()]
+
+            # Visualization: Bar chart of average polarities
+            st.markdown('<h3 style="font-family:sans-serif; font-size:20px;">Average Polarity of Products</h3>',
+                        unsafe_allow_html=True)
             product_names = list(sentiment_analysis.keys())
             scores = [sentiment['average_polarity'] for sentiment in sentiment_analysis.values()]
 
@@ -207,13 +225,19 @@ def main():
             ax.bar(product_names, scores, color='skyblue')
             ax.set_xlabel('Products')
             ax.set_ylabel('Average Polarity')
-            ax.set_title('Average Polarity of Products')
+            # ax.set_title('Average Polarity of Products')
 
             # Set x-axis ticks and labels
             ax.set_xticks(range(len(product_names)))
             ax.set_xticklabels(product_names, rotation=45, ha='right')
 
             st.pyplot(fig)
+
+            # Display average subjectivity per product in a table
+            subjectivity_data = {'Product': products, 'Average Subjectivity': subjectivities}
+            st.markdown('<h3 style="font-family:sans-serif; font-size:20px;">Average Subjectivity per Product</h3>',
+                        unsafe_allow_html=True)
+            st.table(pd.DataFrame(subjectivity_data).set_index('Product'))
 
         else:
             st.write("No sentiment analysis results found.")
